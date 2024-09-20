@@ -56,17 +56,45 @@ class TFCProcessingDataPreprocessor:
         print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_OBJECT,
                              self.df_indivisual_object.shape))
         
+        ### 免許証データ
+        self.df_indivisual_license = read_csv_from_s3(bucket=config.S3_BUCKET, 
+                                                   key=config.KEY_INDIVISUAL_RAW_TFCDATA, 
+                                                   filename=config.FILENAME_INDIVISUAL_RAW_LICENSE, 
+                                                   encoding="shift-jis")
+        print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_LICENSE,
+                             self.df_indivisual_license.shape))
+        
         ### 与信結果データ_カラム名
         self.df_indivisual_result_colname = read_csv_from_s3(bucket = config.S3_BUCKET,
                                                              key = config.KEY_INDIVISUAL_RAW_TFCDATA,
-                                                             filename = config.FILENAME_INDIVISUAL_RESULT_COLNAME,
+                                                             filename = config.FILENAME_INDIVISUAL_RAW_RESULT_COLNAME,
                                                              encoding="utf-8")
         print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_RESULT_COLNAME,
                              self.df_indivisual_result_colname.shape))
         
         ### 説明変数データ_カラム名
+        self.df_indivisual_explain_colname = read_csv_from_s3(bucket = config.S3_BUCKET,
+                                                             key = config.KEY_INDIVISUAL_RAW_TFCDATA,
+                                                             filename = config.FILENAME_INDIVISUAL_RAW_EXPLAIN_COLNAME,
+                                                             encoding="utf-8")
+        print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_EXPLAIN_COLNAME,
+                             self.df_indivisual_explain_colname.shape))
         
         ### 目的変数データ_カラム名
+        self.df_indivisual_object_colname = read_csv_from_s3(bucket = config.S3_BUCKET,
+                                                             key = config.KEY_INDIVISUAL_RAW_TFCDATA,
+                                                             filename = config.FILENAME_INDIVISUAL_RAW_OBJECT_COLNAME,
+                                                             encoding="utf-8")
+        print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_OBJECT_COLNAME,
+                             self.df_indivisual_object_colname.shape))
+        
+        ### 免許証データ_カラム名
+        self.df_indivisual_license_colname = read_csv_from_s3(bucket = config.S3_BUCKET,
+                                                             key = config.KEY_INDIVISUAL_RAW_TFCDATA,
+                                                             filename = config.FILENAME_INDIVISUAL_RAW_LICENSE_COLNAME,
+                                                             encoding="utf-8")
+        print("{}:{}".format(config.FILENAME_INDIVISUAL_RAW_LICENSE_COLNAME,
+                             self.df_indivisual_license_colname.shape))
         
         
     """
@@ -86,12 +114,54 @@ class TFCProcessingDataPreprocessor:
     """
     rename columns
     """
-#     def rename_columns(self,):
+    def rename_columns_tfc_data(self,):
+        ### Creating a column name dictionary
+        dict_result_colname_mapping = dict(zip(self.df_indivisual_result_colname['カラム名'], 
+                                                self.df_indivisual_result_colname['カラム名（和名）']))
+        dict_explain_colname_mapping = dict(zip(self.df_indivisual_explain_colname['カラム名'], 
+                                                self.df_indivisual_explain_colname['カラム名（和名）']))
+        dict_object_colname_mapping = dict(zip(self.df_indivisual_object_colname['カラム名'], 
+                                                self.df_indivisual_object_colname['カラム名（和名）']))
+        dict_license_colname_mapping = dict(zip(self.df_indivisual_license_colname['カラム名'], 
+                                                self.df_indivisual_license_colname['カラム名（和名）']))
         
+        ### Rename columns
+        self.df_indivisual_result = self.df_indivisual_result.rename(columns = dict_result_colname_mapping)
+        self.df_indivisual_result.columns = [f"{col}_result" for col in self.df_indivisual_result.columns]
+        
+        self.df_indivisual_explain = self.df_indivisual_explain.rename(columns = dict_explain_colname_mapping)
+        self.df_indivisual_explain.columns = [f"{col}_result" for col in self.df_indivisual_explain.columns]
+        
+        self.df_indivisual_object = self.df_indivisual_object.rename(columns = dict_object_colname_mapping)
+        self.df_indivisual_object.columns = [f"{col}_result" for col in self.df_indivisual_object.columns]
+        
+        self.df_indivisual_license = self.df_indivisual_license.rename(columns = dict_license_colname_mapping)
+        self.df_indivisual_license.columns = [f"{col}_result" for col in self.df_indivisual_license.columns]
+        
+    """
+    Delete unnecessary records
+    """
     
+    
+    """
+    Cast a pandas object to a specified dtype
+    """
+    
+    
+    """
+    Merge result and explain and object and license
+    """
+    
+    
+    
+    
+    """
+    preprocess pipelines
+    """
     def preprocess_pipeline(self,):
         self.read_data_from_raw()
         self.concat_result_and_explain_data_respectively()
+        self.rename_columns_tfc_data()
         
         
 
@@ -105,5 +175,6 @@ if __name__ == "__main__":
     
     TFCProcessingDataPreprocessor = TFCProcessingDataPreprocessor()
     TFCProcessingDataPreprocessor.preprocess_pipeline()
+    
     
     
