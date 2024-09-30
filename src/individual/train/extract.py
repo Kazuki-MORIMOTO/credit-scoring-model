@@ -24,6 +24,33 @@ def read_tfc_processing_data():
     return df_indivisual_result_to202312
 
 """
+Reading and saving application data
+"""
+def read_application_data() -> pd.DataFrame:
+    ### read sql src
+    with open(config.FILEPATH_SQL_APPLICATION_DATA, 'r') as file:
+        sql_script = file.read()
+    
+    ### read application data from athena
+    df_ApplicationData = query_athena_to_s3(athena_client = config.ATHENA_CLIENT,
+                                                sql = sql_script, 
+                                                database = config.DATABASE, 
+                                                bucket = config.S3_BUCKET,
+                                                key = config.KEY_INDIVISUAL_RAW_APPLICATION_DATA)
+    print("df_ApplicationData shape:{}".format(df_ApplicationData.shape))
+    
+    ### save car data to s3
+    output_csv_for_s3(bucket = config.S3_BUCKET, 
+                      key = config.KEY_INDIVISUAL_RAW_APPLICATION_DATA, 
+                      filename = config.FILENAME_APPLICATION_DATA, 
+                      df = df_ApplicationData)
+    
+    return df_ApplicationData
+
+
+
+
+"""
 Reading and saving　Car data
 """
 def read_car_data() -> pd.DataFrame:
@@ -89,6 +116,24 @@ def read_weblog_data() -> pd.DataFrame:
                       df = df_Weblog)
     return df_Weblog
 
+"""
+Reading and saving weblog data
+"""
+def read_kinto_licence_data() -> pd.DataFrame:
+    ### read weblog data
+    df_KINTOLicenceData = read_csv_from_s3(bucket=config.S3_BUCKET, 
+                                   key=config.KEY_INDIVISUAL_RAW_KINTO_LICENCE_DATA, 
+                                   filename=config.FILENAME_INDIVISUAL_RAW_KINTO_LICENCE_DATA, 
+                                   encoding="utf-8")
+    print("df_KINTOLicenseData shape:{}".format(df_KINTOLicenceData.shape))
+    
+    ### save weblog data to s3
+    output_csv_for_s3(bucket = config.S3_BUCKET, 
+                      key = config.KEY_INDIVISUAL_RAW_KINTO_LICENCE_DATA, 
+                      filename = config.FILENAME_KINTO_LICENCE_DATA, 
+                      df = df_KINTOLicenceData)
+    return df_KINTOLicenceData
+
 
 if __name__ == "__main__":
     ### 環境の読み込み
@@ -100,6 +145,9 @@ if __name__ == "__main__":
     # df = read_tfc_processing_data()
     # print(df.shape)
     
+    ### read application data from athena
+    df_ApplicationData = read_application_data()
+    
     ### read car_data from athena
     df_CarData = read_car_data()
     
@@ -107,4 +155,7 @@ if __name__ == "__main__":
     df_ChomonixData = read_chomonix_data()
     
     ### read weblog data
-    df_Weblog = read_weblog_data()
+    df_WeblogData = read_weblog_data()
+    
+    ### read KINTO licence data
+    df_KINTOLicenceData= read_kinto_licence_data()
