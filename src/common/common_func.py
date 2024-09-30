@@ -46,6 +46,22 @@ def output_csv_for_s3(bucket: str, key: str, filename: str, df: pd.DataFrame()):
                                                    Body=df.to_csv(index=False))
     print("save to :{}".format(key+filename))
     
+"""
+Get latest file from s3
+"""
+def get_latest_file(bucket: str, prefix: str):
+    ### List objects in S3 bucket
+    response = boto3.client('s3').list_objects_v2(Bucket=bucket, 
+                                         Prefix=prefix)
+
+    if 'Contents' in response:
+        # 最新のファイルを取得
+        latest_file = max(response['Contents'], key=lambda x: x['LastModified'])
+        file_name = os.path.basename(latest_file['Key'])
+        return file_name
+    else:
+        return None
+    
 
 """
 Get data from athena and save it to S3
