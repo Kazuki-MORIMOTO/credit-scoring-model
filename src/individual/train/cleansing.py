@@ -4,6 +4,8 @@ import time
 
 import numpy as np
 import pandas as pd
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 from src.common.common_func import load_config
 from src.common.common_func import read_csv_from_s3
@@ -459,8 +461,8 @@ class MergeDataCleaner:
                                 left_on = ["免許証番号_license", "一次審査完了順"],
                                 right_on = ["運転免許番号", "審査申込順"],
                                 how="left")
-        print("merge df_kinto and df_tfc:{}, nunique 契約ID:{}".format(self.df_merge.shape, self.df_merge["契約ID"].nunique()))
-        print("与信結果:{}".format(self.df_merge["与信結果_result"].value_counts()))
+        # print("merge df_kinto and df_tfc:{}, nunique 契約ID:{}".format(self.df_merge.shape, self.df_merge["契約ID"].nunique()))
+        # print("与信結果:{}".format(self.df_merge["与信結果_result"].value_counts()))
         
     """
     Delete unnecessary records
@@ -481,6 +483,7 @@ class MergeDataCleaner:
             return diff.years * 12 + diff.months
     def create_objective_variable(self, ):
         ### Calculate the difference in months and store it in a new column
+        print("create_objective_variable")
         self.df_merge["diff_month_betw_受入年月_初回４次延滞発生年月"] = self.df_merge.apply(lambda row: self.calculate_month_diff(row["受入年月_object_datetime"], 
                                                                                                                      row['初回４次延滞発生年月_object_datetime']),axis=1)
         self.df_merge["diff_month_betw_受入年月_期失処理日"] = self.df_merge.apply(lambda row: self.calculate_month_diff(row["受入年月_object_datetime"], 
@@ -496,7 +499,6 @@ class MergeDataCleaner:
         
         print("value_counts:{}".format(self.df_merge["within_12months_CreditLoss"].value_counts()))
 
-        
     
     """
     Cleansing pipelines
@@ -509,8 +511,8 @@ class MergeDataCleaner:
         
         ### save data
         output_csv_for_s3(bucket = config.S3_BUCKET, 
-                          key = config.KEY_INDIVISUAL_PREPROCESS_TRAINING, 
-                          filename = config.FILENAME_PREPROCESS_DATA, 
+                          key = config.KEY_INDIVISUAL_CLEANSING_TRAINING, 
+                          filename = config.FILENAME_CLEANSING_DATA, 
                           df = self.df_merge)
     
         

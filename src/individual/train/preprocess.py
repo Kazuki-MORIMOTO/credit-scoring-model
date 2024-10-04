@@ -11,12 +11,12 @@ from src.common.common_func import output_csv_for_s3
 from src.common.common_func import query_athena_to_s3
 from src.common.common_func import get_latest_file
 
-# """
-# Cleansing class for TFC processing data
-# """
-# class TFCProcessingDataCleaner:
-#     def __init__(self,):
-#         print(" Start of cleansing of TFC processing data")
+"""
+Feature Enginieering class for 
+"""
+class FeatureEngineer:
+    def __init__(self,):
+        print(" Start of feature engineering")
         
         
         

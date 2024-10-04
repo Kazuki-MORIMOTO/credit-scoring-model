@@ -42,9 +42,10 @@ def read_csv_from_s3(bucket: str, key: str, filename: str, encoding: str):
 output csv to s3
 """
 def output_csv_for_s3(bucket: str, key: str, filename: str, df: pd.DataFrame()):
+    print("start save to :{}".format(key+filename))
     boto3.resource("s3").Bucket(bucket).put_object(Key=key+"/"+filename, 
                                                    Body=df.to_csv(index=False))
-    print("save to :{}".format(key+filename))
+    print("complete save to :{}".format(key+filename))
     
 """
 Get latest file from s3
