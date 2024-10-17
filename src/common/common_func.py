@@ -2,11 +2,16 @@ import io
 import os
 import sys
 import time
+import logging
 
 import pandas as pd
 import boto3
 import pprint
 import datetime
+
+# ログ設定
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 __author__ = 'kazuki morimoto'
@@ -47,22 +52,46 @@ def output_csv_for_s3(bucket: str, key: str, filename: str, df: pd.DataFrame()):
                                                    Body=df.to_csv(index=False))
     print("complete save to :{}".format(key+filename))
     
-"""
-Get latest file from s3
-"""
-def get_latest_file(bucket: str, prefix: str):
-    ### List objects in S3 bucket
-    response = boto3.client('s3').list_objects_v2(Bucket=bucket, 
-                                         Prefix=prefix)
+# """
+# Get latest file from s3
+# """
+# def get_latest_file(bucket: str, prefix: str):
+#     ### List objects in S3 bucket
+#     response = boto3.client('s3').list_objects_v2(Bucket=bucket, 
+#                                          Prefix=prefix)
 
+#     if 'Contents' in response:
+#         # 最新のファイルを取得
+#         latest_file = max(response['Contents'], key=lambda x: x['LastModified'])
+#         file_name = os.path.basename(latest_file['Key'])
+#         return file_name
+#     else:
+#         return None
+
+def get_latest_file(bucket: str, prefix: str, filter_keyword: str = None):
+    # S3バケット内のオブジェクトをリストする
+    response = boto3.client('s3').list_objects_v2(Bucket=bucket, Prefix=prefix)
+    
     if 'Contents' in response:
+        # 特定のキーワードが指定されている場合、そのキーワードを含むファイルだけを対象にする
+        if filter_keyword:
+            # キーワードでフィルタリング
+            files = [obj for obj in response['Contents'] if filter_keyword in os.path.basename(obj['Key'])]
+        else:
+            # キーワードがない場合はすべてのファイルを対象
+            files = response['Contents']
+        
+        # ファイルが見つからない場合はNoneを返す
+        if not files:
+            return None
+        
         # 最新のファイルを取得
-        latest_file = max(response['Contents'], key=lambda x: x['LastModified'])
+        latest_file = max(files, key=lambda x: x['LastModified'])
         file_name = os.path.basename(latest_file['Key'])
         return file_name
     else:
         return None
-    
+
 
 """
 Get data from athena and save it to S3
@@ -111,3 +140,30 @@ def query_athena_to_s3(athena_client: boto3.Session.client, sql: str, database: 
     boto3.resource("s3").Bucket(bucket).put_object(Key=key+"/"+today_str+".csv", Body=df.to_csv())
     
     return df
+
+
+"""
+Upload model to S3
+"""
+def upload_model_to_s3(bucket: str, key: str, file_name: str, ):
+    s3_client = boto3.client('s3')
+    logger.info(f"bucket:{bucket}")
+    logger.info(f"key:{key}")
+    logger.info(f"upload file_name:{file_name}")
+    
+    ### original file
+    s3_client.upload_file(file_name, 
+                          bucket,
+                          os.path.join(key,os.path.basename(file_name)))
+    logger.info(f"Uploaded original file: {file_name}")
+    
+    ### datetime file
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    backup_file_name = f"{timestamp}_{os.path.splitext(os.path.basename(file_name))[0]}{os.path.splitext(file_name)[1]}"
+    
+    s3_client.upload_file(
+        file_name, 
+        bucket,
+        os.path.join(key, backup_file_name)
+    )
+    logger.info(f"Uploaded backup file: {backup_file_name}")
